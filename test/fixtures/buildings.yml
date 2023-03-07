@@ -1,0 +1,34 @@
+# == Schema Information
+#
+# Table name: buildings
+#
+#  id           :integer          not null, primary key
+#  address      :string
+#  city         :string
+#  country      :string
+#  manager_name :string
+#  reference    :integer
+#  zip_code     :string
+#  created_at   :datetime         not null
+#  updated_at   :datetime         not null
+#
+# Indexes
+#
+#  index_buildings_on_reference  (reference)
+#
+
+one:
+  reference: MyString1
+  address: MyString1
+  zip_code: MyString1
+  city: MyString1
+  country: MyString1
+  manager_name: MyString1
+
+two:
+  reference: MyString2
+  address: MyString2
+  zip_code: MyString2
+  city: MyString2
+  country: MyString2
+  manager_name: MyString2
