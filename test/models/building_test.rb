@@ -39,7 +39,7 @@ class BuildingTest < ActiveSupport::TestCase
     assert Building.count == 4
   end
 
-  test "#Building.import idempotency" do
+  test "idempotency import and update when not_overridable = same values and overridable = same values" do
     Building.import
     last_one = Building.last
     Building.import
@@ -47,7 +47,17 @@ class BuildingTest < ActiveSupport::TestCase
     assert Building.count == 4
   end
 
-  test "some attributes are not overridable" do
+  test "import and update when not_overridable = same values and overridable = diffent values" do
+    Building.import
+    last_building =  Building.last
+    new_zip_code = "99999"
+    last_building.update(zip_code: "99999")
+    last_building_reference = last_building.reference
+    Building.import
+    assert Building.find_by_reference(last_building_reference).zip_code != new_zip_code
+  end
+
+  test "do not import and update when  not_overridable = diffent values and overridable = same values" do
     Building.import
     attr = Building::NON_OVERRIDABLE_ATTRIBUTES.first
     last_building =  Building.last
@@ -60,17 +70,18 @@ class BuildingTest < ActiveSupport::TestCase
     assert last_building.equal_attributes?(Building.last)
   end
 
-  test "some attributes are overridable" do
+  test "do not import and update when not_overridable = diffent values and overridable = diffent values" do
     Building.import
-    attr = "address"
+    attr = Building::NON_OVERRIDABLE_ATTRIBUTES.first
     last_building =  Building.last
     default_value =  last_building.send(attr)
     modified_value = default_value + " +++modified+++"
     last_building.update(attr => modified_value)
+    new_zip_code = "99999"
+    last_building.update(zip_code: "99999")
     last_building_reference = last_building.reference
     Building.import
-    assert Building.find_by_reference(last_building_reference).send(attr) != modified_value
-    assert Building.find_by_reference(last_building_reference).send(attr) == default_value
-    assert !last_building.equal_attributes?(Building.last)
+    assert Building.find_by_reference(last_building_reference).send(attr) == modified_value
+    assert Building.find_by_reference(last_building_reference).zip_code == new_zip_code
   end
 end

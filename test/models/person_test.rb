@@ -40,7 +40,7 @@ class PersonTest < ActiveSupport::TestCase
     assert Person.count == 4
   end
 
-  test "#Person.import idempotency" do
+  test "idempotency import and update when not_overridable = same values and overridable = same values" do
     Person.import
     last_one = Person.last
     Person.import
@@ -48,7 +48,17 @@ class PersonTest < ActiveSupport::TestCase
     assert Person.count == 4
   end
 
-  test "some attributes are not overridable" do
+  test "import and update when not_overridable = same values and overridable = diffent values" do
+    Person.import
+    last_person =  Person.last
+    new_firstname = "XXXXXXX"
+    last_person.update(firstname: new_firstname)
+    last_person_reference = last_person.reference
+    Person.import
+    assert Person.find_by_reference(last_person_reference).firstname != new_firstname
+  end
+
+  test "do not import and update when not_overridable = diffent values and overridable = same values" do
     Person.import
     attr = Person::NON_OVERRIDABLE_ATTRIBUTES.first
     last_person =  Person.last
@@ -58,20 +68,20 @@ class PersonTest < ActiveSupport::TestCase
     last_person_reference = last_person.reference
     Person.import
     assert Person.find_by_reference(last_person_reference).send(attr) == modified_value
-    assert last_person.equal_attributes?(Person.last)
   end
 
-  test "some attributes are overridable" do
+  test "do not import and update when not_overridable = diffent values and overridable = diffent values" do
     Person.import
-    attr = "firstname"
+    attr = Person::NON_OVERRIDABLE_ATTRIBUTES.first
     last_person =  Person.last
+    new_firstname = "XXXXXXX"
+    last_person.update(firstname: new_firstname)
     default_value =  last_person.send(attr)
     modified_value = default_value + " +++modified+++"
     last_person.update(attr => modified_value)
     last_person_reference = last_person.reference
     Person.import
-    assert Person.find_by_reference(last_person_reference).send(attr) != modified_value
-    assert Person.find_by_reference(last_person_reference).send(attr) == default_value
-    assert !last_person.equal_attributes?(Person.last)
+    assert Person.find_by_reference(last_person_reference).send(attr) == modified_value
+    assert Person.find_by_reference(last_person_reference).firstname == new_firstname
   end
 end

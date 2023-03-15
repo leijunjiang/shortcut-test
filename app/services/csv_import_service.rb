@@ -13,15 +13,21 @@ class CsvImportService
       param_hash = row.to_h
       overridable_attrs     = param_hash.except(*non_overridable_attributes+["reference"])
       non_overridable_attrs = param_hash.slice(*non_overridable_attributes)
-      klass.find_or_initialize_by(reference: param_hash["reference"]).tap do |obj|
-        overridable_attrs.each do |key, value|
-          obj.write_attribute(key, value)
+
+      klass.transaction do
+        obj = klass.find_by(reference: param_hash["reference"])
+        if obj
+          if same_attributes?(obj, non_overridable_attrs) && !same_attributes?(obj, overridable_attrs)
+            obj.update(overridable_attrs)
+          end
+        else
+          klass.new(param_hash).save
         end
-        non_overridable_attrs.each do |key, value|
-          obj.write_attribute(key, obj.send(key) || value)
-        end
-        obj.save!
       end
     end
+  end
+
+  def same_attributes?(obj, overridable_attrs)
+    overridable_attrs.all? { | attribute, value | obj.send(attribute) == value}
   end
 end
